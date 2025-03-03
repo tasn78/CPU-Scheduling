@@ -1,21 +1,33 @@
-# Process class for creating, randomizing and handling CPU processes
-import random, os, csv
+# process.py
+import random
+import os
+import csv
 
+
+# Process class for creating, randomizing and handling CPU processes
 class Process:
     def __init__(self, pid, arrival_time, duration, priority=None):
-        self.pid = pid              # Process ID
+        self.pid = pid  # Process ID
         self.arrival_time = arrival_time  # Arrival time of the process
-        self.duration = duration      # Duration (time required for the process)
-        self.priority = priority      # Priority (used in Priority Scheduling)
-        self.remaining_duration = duration  # For algorithms like SRTF
-        self.completion_time = 0      # Time when the process completes
-        self.turnaround_time = 0      # Turnaround time
-        self.waiting_time = 0        # Waiting time
+        self.duration = duration  # Duration (time required for the process)
+        self.priority = priority  # Priority (used in Priority Scheduling)
+        self.remaining_duration = duration  # For algorithms like SRTF and Round Robin
+        self.completion_time = 0  # Time when the process completes
+        self.turnaround_time = 0  # Turnaround time
+        self.waiting_time = 0  # Waiting time
+        self.next_execution_time = arrival_time # Used for SRTF
 
     def __repr__(self):
         return f"Process({self.pid}, {self.arrival_time}, {self.duration}, {self.priority})"
 
+    # Create a deep copy of the process
+    def clone(self):
+        new_process = Process(self.pid, self.arrival_time, self.duration, self.priority)
+        new_process.remaining_duration = self.remaining_duration
+        return new_process
 
+
+# Generates characteristics for random processes
 def generate_processes(num_processes):
     processes = []
     for pid in range(1, num_processes + 1):
@@ -27,15 +39,18 @@ def generate_processes(num_processes):
     return processes
 
 
-# Creates transient event
-def create_transient_event(current_time, processes):
-    new_pid = len(processes) + 1  # New process ID
-    new_process = Process(new_pid, current_time + 1, random.randint(1, 10), random.randint(1, 5))
-    processes.append(new_process)
+# Creates a transient event
+def create_transient_event(current_time):
+    new_pid = 999  # Special PID for transient event
+    duration = random.randint(1, 10)
+    priority = random.randint(1, 5)
+    new_process = Process(new_pid, current_time + 1, duration, priority)
     print(f"New transient event (process {new_process.pid}) arrived at time {current_time + 1}!")
+    print(f"Process Details: Duration={duration}, Priority={priority}")
+    return new_process
 
 
-# Saves processes to a file for single generation and testing rather than always generating new processes
+# Saves processes to a file for single generation and testing
 def save_processes_to_file(processes, filename="processes.csv"):
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
@@ -45,7 +60,7 @@ def save_processes_to_file(processes, filename="processes.csv"):
             writer.writerow([process.pid, process.arrival_time, process.duration, process.priority])
 
 
-# Loads processes
+# Loads randomly generated processes from a csv file
 def load_processes_from_file(filename="processes.csv"):
     processes = []
     if os.path.exists(filename):  # Check if the file exists
@@ -62,4 +77,3 @@ def load_processes_from_file(filename="processes.csv"):
     else:
         print(f"File '{filename}' not found. Generating new processes.")
     return processes
-
